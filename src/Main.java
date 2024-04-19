@@ -73,7 +73,7 @@ class Swing extends JFrame implements ActionListener{
     }
     public void initFrame(){
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(900,250,850,600); //        frame.setSize(500,600); frame.setLocation(750,250);
+        setBounds(600,250,850,600); //        frame.setSize(500,600); frame.setLocation(750,250);
         setTitle("Register Form");
         setResizable(false);
 //        getContentPane().setBackground(new Color(75, 84, 209));
