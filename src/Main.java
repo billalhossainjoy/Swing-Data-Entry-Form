@@ -59,9 +59,9 @@ class Swing extends JFrame implements ActionListener{
 
     public void initFetch(){
         try{
-            ResultSet result = statement.executeQuery("Select * from student");
+            ResultSet result = statement.executeQuery("SELECT * from student ORDER BY roll ASC;");
             while (result.next()){
-                String name = result.getString("name").toUpperCase();
+                String name = result.getString("name");
                 String roll = result.getString("roll");
                 String phone = result.getString("phone");
                 tableModel.addRow(new Object[]{name,roll,phone});
@@ -315,7 +315,7 @@ class Swing extends JFrame implements ActionListener{
                 troll.setText(null);
                 tMobile.setText(null);
             }catch (Exception insert){
-                if(insert.getMessage() == "Duplicate entry 'f' for key 'PRIMARY'"){
+                if(insert.getMessage().substring(29) == "Duplicate entry 'f' for key 'PRIMARY'"){
                 System.out.println("insert error");
                 result.setText("This roll already exists...");
                 Timer timer = new Timer();
@@ -326,7 +326,18 @@ class Swing extends JFrame implements ActionListener{
                     }
                 };
                 timer.schedule(task,3000);
-                }else{
+                } else if(insert.getMessage() == "error") {
+                    result.setText("Connection error...");
+                    Timer timer = new Timer();
+                    TimerTask task = new TimerTask() {
+                        @Override
+                        public void run() {
+                            result.setText("");
+                        }
+                    };
+                    timer.schedule(task,3000);
+
+                } else{
                 result.setText("This roll already exists...");
                 Timer timer = new Timer();
                 TimerTask task = new TimerTask() {
