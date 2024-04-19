@@ -1,34 +1,76 @@
+import com.mysql.cj.protocol.Resultset;
+import com.sun.tools.jconsole.JConsoleContext;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.*;
 import java.util.TimerTask;
 import java.util.Timer;
 
 class Swing extends JFrame implements ActionListener{
-
-
-
     ImageIcon icon;
     Container window;
     JPanel Form, dataSheet,imageContainer;
     JTable dataTable;
     DefaultTableModel tableModel;
-    JLabel formTitle, Image, FName, LName, Mobile ,Gender,result,roll;
+    JLabel formTitle, Image, FName, LName, Mobile ,Gender,result,roll,sqlCon , sqlConState;
     JTextField FNameText, LNameText, tMobile,troll;
     JRadioButton male,female;
     ButtonGroup gender;
     JButton submit,reset,dataSheets;
+    String SqlState;
 
-    Swing(){
+    Connection con;
+    Statement statement;
+
+    Swing() {
+        jdbc();
         initFrame();
         datasheet();
+        initFetch();
         App();
+    }
+
+    public void jdbc() {
+        String url = "jdbc:mysql://localhost:3306/Student-DataEntry-Form";
+        String userName = "root";
+        String userPass = "";
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+        }catch (ClassNotFoundException e){
+            System.out.println(e.getMessage());
+        }
+        try {
+            con = DriverManager.getConnection(url,userName,userPass);
+            System.out.println("SQL Connected...");
+            SqlState = "Connected...";
+            statement = con.createStatement();
+            statement.execute("create table if not exists Student(name varchar(255),roll varchar(100) primary key,phone varchar(100),gender varchar(100));");
+        }catch (SQLException e){
+            System.out.println("Sql error");
+            SqlState = "Disconnected...";
+        }
     }
 
 
 
+    public void initFetch(){
+        try{
+            ResultSet result = statement.executeQuery("Select * from student");
+            while (result.next()){
+                String name = result.getString("name").toUpperCase();
+                String roll = result.getString("roll");
+                String phone = result.getString("phone");
+                tableModel.addRow(new Object[]{name,roll,phone});
+            }
+        }catch (Exception Query){
+            System.out.println(Query);
+            System.out.println("query error");
+        }
+    }
     public void initFrame(){
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(900,250,850,600); //        frame.setSize(500,600); frame.setLocation(750,250);
@@ -59,6 +101,7 @@ class Swing extends JFrame implements ActionListener{
         dataTable.getTableHeader().setForeground(Color.white);
         dataTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 16));
         dataTable.setFont(new Font("Arial", Font.PLAIN, 15));
+        dataTable.getColumnModel().getColumn(0).setPreferredWidth(150);
         dataTable.getColumnModel().getColumn(2).setPreferredWidth(250);
         dataTable.setBounds(0,40,450,600);
         dataTable.setRowHeight(30);
@@ -212,7 +255,17 @@ class Swing extends JFrame implements ActionListener{
         result.setForeground(Color.white);
         Form.add(result);
 
+        sqlCon = new JLabel("SQL:");
+        sqlCon.setBounds(50,500, 400,20);
+        sqlCon.setFont(new Font("Arial", Font.BOLD, 20));
+        sqlCon.setForeground(Color.white);
+        Form.add(sqlCon);
 
+        sqlConState = new JLabel(SqlState);
+        sqlConState.setBounds(100,500, 400,20);
+        sqlConState.setFont(new Font("Arial", Font.BOLD, 20));
+        sqlConState.setForeground(Color.white);
+        Form.add(sqlConState);
         window.add(Form);
         window.add(dataSheet);
         window.add(imageContainer);
@@ -241,13 +294,51 @@ class Swing extends JFrame implements ActionListener{
             }else {
                 dataSheet.setVisible(false);
                 dataSheets.setText("Data Sheet");
+
             }
         } else {
+            try{
+                String FullName = FNameText.getText() + " " + LNameText.getText();
+                statement.execute("insert into student(name,roll,phone) values('"+FullName + "','"+troll.getText()+"','"+tMobile.getText()+"'); ");
             tableModel.addRow(new Object[]{FNameText.getText(),troll.getText(),tMobile.getText()});
-            FNameText.setText(null);
-            LNameText.setText(null);
-            troll.setText(null);
-            tMobile.setText(null);
+                result.setText("Added Successfully...");
+                Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        result.setText("");
+                    }
+                };
+                timer.schedule(task,3000);
+                FNameText.setText(null);
+                LNameText.setText(null);
+                troll.setText(null);
+                tMobile.setText(null);
+            }catch (Exception insert){
+                if(insert.getMessage() == "Duplicate entry 'f' for key 'PRIMARY'"){
+                System.out.println("insert error");
+                result.setText("This roll already exists...");
+                Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        result.setText("");
+                    }
+                };
+                timer.schedule(task,3000);
+                }else{
+                result.setText("This roll already exists...");
+                Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        result.setText("");
+                    }
+                };
+                timer.schedule(task, 3000);
+            }
+            }
+
         }
     }
 
